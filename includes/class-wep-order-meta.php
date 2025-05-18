@@ -5,8 +5,12 @@ class WEP_Order_Meta {
     public function __construct() {
         $this->settings = get_option('wep_settings', []);
         
-        // Log initialization
-        error_log('WEP_Order_Meta initialized');
+        // Log initialization using our custom logger if available
+        if (function_exists('wep_log')) {
+            wep_log('WEP_Order_Meta initialized');
+        } else {
+            error_log('WEP_Order_Meta initialized');
+        }
         
         // CORRECT: Use $this to reference the current instance method
         add_action('woocommerce_checkout_update_order_meta', array($this, 'save_participant_data'));
@@ -14,21 +18,24 @@ class WEP_Order_Meta {
     }
 
     public function save_participant_data($order_id) {
+        // Use our custom logger if available
+        $log = function_exists('wep_log') ? 'wep_log' : 'error_log';
+        
         // Test value to verify hook is working
         update_post_meta($order_id, 'participant_hook_test', 'Hook is working!');
         
         // Log that this function was called with the order ID
-        error_log('WEP_Order_Meta::save_participant_data called for order #' . $order_id);
+        $log('WEP_Order_Meta::save_participant_data called for order #' . $order_id);
         
         // Log the POST data to see what's coming in
-        error_log('POST data: ' . print_r($_POST, true));
+        $log('POST data: ' . print_r($_POST, true));
         
         // Save the default customer info as participant 1
         $order = wc_get_order($order_id);
         
         if ($order) {
             // Log that we have a valid order
-            error_log('Valid order object found for #' . $order_id);
+            $log('Valid order object found for #' . $order_id);
             
             // Save default customer billing info as participant 1 data
             update_post_meta($order_id, 'peserta_1_nama_depan', $order->get_billing_first_name());
@@ -41,44 +48,44 @@ class WEP_Order_Meta {
             update_post_meta($order_id, 'peserta_1_pekerjaan', '');
             
             // Log successful first participant data storage
-            error_log('Participant 1 data stored for order #' . $order_id);
+            $log('Participant 1 data stored for order #' . $order_id);
             
             // Verify data was actually saved
             $first_name = get_post_meta($order_id, 'peserta_1_nama_depan', true);
-            error_log('Verification - peserta_1_nama_depan value: ' . $first_name);
+            $log('Verification - peserta_1_nama_depan value: ' . $first_name);
         } else {
             // Log failure to get order
-            error_log('Failed to get order object for #' . $order_id);
+            $log('Failed to get order object for #' . $order_id, 'error');
         }
         
         // Log the filtered POST keys to check for participant data
         $participant_fields = array_filter(array_keys($_POST), function($key) {
             return strpos($key, 'peserta_') === 0;
         });
-        error_log('Participant fields found in POST: ' . print_r($participant_fields, true));
+        $log('Participant fields found in POST: ' . print_r($participant_fields, true));
         
         // Save data for additional participants (2 and above)
         $saved_fields = 0;
         foreach ($_POST as $key => $value) {
             if (strpos($key, 'peserta_') === 0) {
                 $result = update_post_meta($order_id, $key, sanitize_text_field($value));
-                error_log('Saving field ' . $key . ' for order #' . $order_id . ': ' . ($result ? 'Success' : 'Failed'));
+                $log('Saving field ' . $key . ' for order #' . $order_id . ': ' . ($result ? 'Success' : 'Failed') . ' - Value: ' . sanitize_text_field($value));
                 $saved_fields++;
             }
         }
         
         // Log how many participant fields were saved
-        error_log('Saved ' . $saved_fields . ' participant fields for order #' . $order_id);
+        $log('Saved ' . $saved_fields . ' participant fields for order #' . $order_id);
         
         // Double-check with direct database query
         global $wpdb;
-        $meta_count = $wpdb->get_var(
+        $meta_entries = $wpdb->get_results(
             $wpdb->prepare(
-                "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key LIKE %s",
+                "SELECT meta_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key LIKE %s",
                 $order_id, 'peserta_%'
             )
         );
-        error_log('Database verification - Order #' . $order_id . ' has ' . $meta_count . ' participant meta entries');
+        $log('Database verification - Found meta entries: ' . print_r($meta_entries, true));
     }
 
     public function display_participant_data_admin($order) {
