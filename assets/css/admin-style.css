@@ -1,4 +1,4 @@
-/woo-event-participants-advanced/woo-event-participants-advanced/assets/css/admin-style.css
+/*woo-event-participants-advanced/woo-event-participants-advanced/assets/css/admin-style.css
 
 /* Admin styles for the Woo Event Participants plugin */
 body.wp-admin {
@@ -38,4 +38,23 @@ button.button-primary:hover {
     background-color: #f2dede;
     border-color: #ebccd1;
     color: #a94442;
+}
+
+.tab-content {
+    background: #fff;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-top: none;
+}
+
+.wp-list-table th {
+    font-weight: 600;
+}
+
+.wp-list-table input[type="number"] {
+    width: 60px;
+}
+
+.nav-tab-wrapper {
+    margin-bottom: 0;
 }
