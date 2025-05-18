@@ -10,6 +10,40 @@ class WEP_Order_Meta {
         
         add_action('woocommerce_checkout_update_order_meta', [$this, 'save_participant_data']);
         add_action('woocommerce_admin_order_data_after_billing_address', [$this, 'display_participant_data_admin'], 10, 1);
+        
+        // DEBUG: Add additional hooks to track WooCommerce checkout process
+        add_action('woocommerce_checkout_process', function() {
+            error_log('WooCommerce checkout process started');
+        });
+        
+        add_action('woocommerce_checkout_order_created', function($order) {
+            error_log('WooCommerce order created: #' . $order->get_id());
+        });
+        
+        add_action('woocommerce_checkout_order_processed', function($order_id) {
+            error_log('WooCommerce order processed: #' . $order_id);
+            // Manually check if our data exists in the POST at this point
+            $has_participant_fields = false;
+            foreach ($_POST as $key => $value) {
+                if (strpos($key, 'peserta_') === 0) {
+                    $has_participant_fields = true;
+                    break;
+                }
+            }
+            error_log('Order #' . $order_id . ' - Has participant fields in POST: ' . ($has_participant_fields ? 'Yes' : 'No'));
+        });
+        
+        // Manually verify data was saved after processing
+        add_action('woocommerce_thankyou', function($order_id) {
+            global $wpdb;
+            $meta_count = $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key LIKE %s",
+                    $order_id, 'peserta_%'
+                )
+            );
+            error_log('Order #' . $order_id . ' - Participant meta count in database: ' . $meta_count);
+        });
     }
 
     public function save_participant_data($order_id) {
@@ -38,6 +72,10 @@ class WEP_Order_Meta {
             
             // Log successful first participant data storage
             error_log('Participant 1 data stored for order #' . $order_id);
+            
+            // Verify data was actually saved
+            $first_name = get_post_meta($order_id, 'peserta_1_nama_depan', true);
+            error_log('Verification - peserta_1_nama_depan value: ' . $first_name);
         } else {
             // Log failure to get order
             error_log('Failed to get order object for #' . $order_id);
@@ -53,13 +91,24 @@ class WEP_Order_Meta {
         $saved_fields = 0;
         foreach ($_POST as $key => $value) {
             if (strpos($key, 'peserta_') === 0) {
-                update_post_meta($order_id, $key, sanitize_text_field($value));
+                $result = update_post_meta($order_id, $key, sanitize_text_field($value));
+                error_log('Saving field ' . $key . ' for order #' . $order_id . ': ' . ($result ? 'Success' : 'Failed'));
                 $saved_fields++;
             }
         }
         
         // Log how many participant fields were saved
         error_log('Saved ' . $saved_fields . ' participant fields for order #' . $order_id);
+        
+        // Double-check with direct database query
+        global $wpdb;
+        $meta_count = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key LIKE %s",
+                $order_id, 'peserta_%'
+            )
+        );
+        error_log('Database verification - Order #' . $order_id . ' has ' . $meta_count . ' participant meta entries');
     }
 
     public function display_participant_data_admin($order) {
