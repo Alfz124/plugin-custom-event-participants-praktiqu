@@ -4,19 +4,28 @@ class WEP_Checkout_Fields {
 
     public function __construct() {
         $this->settings = get_option('wep_settings', []);
+        
+        // Log initialization
+        error_log('WEP_Checkout_Fields initialized with settings: ' . print_r($this->settings, true));
+        
         add_action('woocommerce_before_order_notes', [$this, 'display_participant_forms']);
     }
 
     public function display_participant_forms($checkout) {
         // Check if plugin is enabled
         if (isset($this->settings['enable_plugin']) && $this->settings['enable_plugin'] == 0) {
+            error_log('Plugin is disabled. Not displaying participant forms.');
             return;
         }
         
         $jumlah_peserta_total = $this->calculate_total_participants();
         
+        // Log the calculated number of participants
+        error_log('Total participants calculated: ' . $jumlah_peserta_total);
+        
         // If only one or zero participants needed, exit (as the first participant is the default checkout customer)
         if ($jumlah_peserta_total <= 1) {
+            error_log('Only one participant needed. Not displaying additional forms.');
             return;
         }
         
@@ -24,6 +33,9 @@ class WEP_Checkout_Fields {
         echo '<div class="wep-participant-info">';
         echo '<p><strong>Informasi:</strong> Data peserta pertama akan menggunakan data pemesan di atas.</p>';
         echo '</div>';
+        
+        // Log that we're displaying participant forms
+        error_log('Displaying forms for ' . ($jumlah_peserta_total - 1) . ' additional participants');
         
         // Display participant forms starting from participant #2
         // The first participant's info comes from the standard billing fields
@@ -82,6 +94,13 @@ class WEP_Checkout_Fields {
         $total_participants = 0;
         $detection_method = isset($this->settings['detection_method']) ? $this->settings['detection_method'] : 'auto';
         $pattern = isset($this->settings['variation_pattern']) ? $this->settings['variation_pattern'] : '/\b(\d+)\s*Orang\b/i';
+        
+        // Log the detection method and pattern
+        error_log('Detection method: ' . $detection_method);
+        error_log('Variation pattern: ' . $pattern);
+        
+        // Log the cart contents
+        error_log('Cart contents: ' . print_r(WC()->cart->get_cart(), true));
         
         foreach (WC()->cart->get_cart() as $cart_item) {
             $product = $cart_item['data'];
