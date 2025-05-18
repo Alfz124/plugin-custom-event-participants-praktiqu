@@ -46,4 +46,12 @@ function wep_enqueue_admin_scripts($hook) {
     wp_enqueue_script('wep-admin-script', WEP_PLUGIN_URL . 'assets/js/admin-script.js', array('jquery'), null, true);
 }
 add_action('admin_enqueue_scripts', 'wep_enqueue_admin_scripts');
+
+// Enqueue frontend styles
+function wep_enqueue_frontend_scripts() {
+    if (is_checkout()) {
+        wp_enqueue_style('wep-frontend-style', WEP_PLUGIN_URL . 'assets/css/frontend-style.css');
+    }
+}
+add_action('wp_enqueue_scripts', 'wep_enqueue_frontend_scripts');
 ?>

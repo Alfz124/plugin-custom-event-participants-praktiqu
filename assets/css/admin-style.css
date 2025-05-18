@@ -58,3 +58,11 @@ button.button-primary:hover {
 .nav-tab-wrapper {
     margin-bottom: 0;
 }
+
+/* Frontend styles */
+.wep-participant-info {
+    padding: 10px 15px;
+    background-color: #f8f8f8;
+    border-left: 4px solid #0073aa;
+    margin-bottom: 20px;
+}

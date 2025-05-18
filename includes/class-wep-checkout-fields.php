@@ -15,13 +15,19 @@ class WEP_Checkout_Fields {
         
         $jumlah_peserta_total = $this->calculate_total_participants();
         
-        // If no participants needed, exit
-        if ($jumlah_peserta_total < 1) {
+        // If only one or zero participants needed, exit (as the first participant is the default checkout customer)
+        if ($jumlah_peserta_total <= 1) {
             return;
         }
         
-        // Display participant forms
-        for ($i = 1; $i <= $jumlah_peserta_total; $i++) {
+        // Display an explanatory message about the first participant
+        echo '<div class="wep-participant-info">';
+        echo '<p><strong>Informasi:</strong> Data peserta pertama akan menggunakan data pemesan di atas.</p>';
+        echo '</div>';
+        
+        // Display participant forms starting from participant #2
+        // The first participant's info comes from the standard billing fields
+        for ($i = 2; $i <= $jumlah_peserta_total; $i++) {
             echo "<h3>Data Peserta {$i}</h3>";
             
             // First name (required)

@@ -1,0 +1,19 @@
+/* Frontend styles for the Custom Event Participants plugin */
+
+/* Participant info message */
+.wep-participant-info {
+    padding: 10px 15px;
+    background-color: #f8f8f8;
+    border-left: 4px solid #0073aa;
+    margin-bottom: 20px;
+}
+
+/* Participant form sections */
+h3:not(:first-child) {
+    margin-top: 30px;
+}
+
+/* Form field spacing */
+.woocommerce form .form-row {
+    margin-bottom: 15px;
+}
