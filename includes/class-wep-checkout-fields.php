@@ -8,7 +8,8 @@ class WEP_Checkout_Fields {
         // Log initialization
         error_log('WEP_Checkout_Fields initialized with settings: ' . print_r($this->settings, true));
         
-        add_action('woocommerce_before_order_notes', [$this, 'display_participant_forms']);
+        // CORRECT: Use $this to reference the current instance method
+        add_action('woocommerce_before_order_notes', array($this, 'display_participant_forms'));
     }
 
     public function display_participant_forms($checkout) {

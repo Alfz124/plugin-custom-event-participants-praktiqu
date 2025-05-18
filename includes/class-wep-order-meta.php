@@ -5,48 +5,18 @@ class WEP_Order_Meta {
     public function __construct() {
         $this->settings = get_option('wep_settings', []);
         
-        // Add a log entry when the class is initialized
+        // Log initialization
         error_log('WEP_Order_Meta initialized');
         
-        add_action('woocommerce_checkout_update_order_meta', [$this, 'save_participant_data']);
-        add_action('woocommerce_admin_order_data_after_billing_address', [$this, 'display_participant_data_admin'], 10, 1);
-        
-        // DEBUG: Add additional hooks to track WooCommerce checkout process
-        add_action('woocommerce_checkout_process', function() {
-            error_log('WooCommerce checkout process started');
-        });
-        
-        add_action('woocommerce_checkout_order_created', function($order) {
-            error_log('WooCommerce order created: #' . $order->get_id());
-        });
-        
-        add_action('woocommerce_checkout_order_processed', function($order_id) {
-            error_log('WooCommerce order processed: #' . $order_id);
-            // Manually check if our data exists in the POST at this point
-            $has_participant_fields = false;
-            foreach ($_POST as $key => $value) {
-                if (strpos($key, 'peserta_') === 0) {
-                    $has_participant_fields = true;
-                    break;
-                }
-            }
-            error_log('Order #' . $order_id . ' - Has participant fields in POST: ' . ($has_participant_fields ? 'Yes' : 'No'));
-        });
-        
-        // Manually verify data was saved after processing
-        add_action('woocommerce_thankyou', function($order_id) {
-            global $wpdb;
-            $meta_count = $wpdb->get_var(
-                $wpdb->prepare(
-                    "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key LIKE %s",
-                    $order_id, 'peserta_%'
-                )
-            );
-            error_log('Order #' . $order_id . ' - Participant meta count in database: ' . $meta_count);
-        });
+        // CORRECT: Use $this to reference the current instance method
+        add_action('woocommerce_checkout_update_order_meta', array($this, 'save_participant_data'));
+        add_action('woocommerce_admin_order_data_after_billing_address', array($this, 'display_participant_data_admin'), 10, 1);
     }
 
     public function save_participant_data($order_id) {
+        // Test value to verify hook is working
+        update_post_meta($order_id, 'participant_hook_test', 'Hook is working!');
+        
         // Log that this function was called with the order ID
         error_log('WEP_Order_Meta::save_participant_data called for order #' . $order_id);
         
