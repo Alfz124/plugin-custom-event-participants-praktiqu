@@ -1,0 +1,41 @@
+/woo-event-participants-advanced/woo-event-participants-advanced/assets/css/admin-style.css
+
+/* Admin styles for the Woo Event Participants plugin */
+body.wp-admin {
+    font-family: Arial, sans-serif;
+}
+
+.wrap h1 {
+    color: #0073aa;
+}
+
+.form-table th {
+    width: 25%;
+}
+
+.form-table td {
+    padding: 10px;
+}
+
+button.button-primary {
+    background-color: #0073aa;
+    border-color: #0073aa;
+    color: #ffffff;
+}
+
+button.button-primary:hover {
+    background-color: #005177;
+    border-color: #005177;
+}
+
+.notice.notice-success {
+    background-color: #dff0d8;
+    border-color: #d6e9c6;
+    color: #3c763d;
+}
+
+.notice.notice-error {
+    background-color: #f2dede;
+    border-color: #ebccd1;
+    color: #a94442;
+}
