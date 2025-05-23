@@ -5,6 +5,7 @@ class WEP_Order_Meta {
     public function __construct() {
         $this->settings = get_option('wep_settings', []);
         
+
         // Log initialization using our custom logger if available
         if (function_exists('wep_log')) {
             wep_log('WEP_Order_Meta initialized');
@@ -73,7 +74,7 @@ class WEP_Order_Meta {
                 $saved_fields++;
             }
         }
-        
+        $order->save();
         // Log how many participant fields were saved
         $log('Saved ' . $saved_fields . ' participant fields for order #' . $order_id);
         
