@@ -18,76 +18,60 @@ class WEP_Order_Meta {
         add_action('woocommerce_admin_order_data_after_billing_address', array($this, 'display_participant_data_admin'), 10, 1);
     }
 
-    public function save_participant_data($order_id) {
-        // Use our custom logger if available
-        $log = function_exists('wep_log') ? 'wep_log' : 'error_log';
-        
-        // Test value to verify hook is working
-        update_post_meta($order_id, 'participant_hook_test', 'Hook is working!');
-        
-        // Log that this function was called with the order ID
-        $log('WEP_Order_Meta::save_participant_data called for order #' . $order_id);
-        
-        // Log the POST data to see what's coming in
-        $log('POST data: ' . print_r($_POST, true));
-        
-        // Save the default customer info as participant 1
-        $order = wc_get_order($order_id);
-        
-        if ($order) {
-            // Log that we have a valid order
-            $log('Valid order object found for #' . $order_id);
-            
-            // Save default customer billing info as participant 1 data
-            update_post_meta($order_id, 'peserta_1_nama_depan', $order->get_billing_first_name());
-            update_post_meta($order_id, 'peserta_1_nama_belakang', $order->get_billing_last_name());
-            update_post_meta($order_id, 'peserta_1_telepon', $order->get_billing_phone());
-            update_post_meta($order_id, 'peserta_1_email', $order->get_billing_email());
-            update_post_meta($order_id, 'peserta_1_kota', $order->get_billing_city());
-            
-            // No direct field for occupation in standard WooCommerce, so leave it blank
-            update_post_meta($order_id, 'peserta_1_pekerjaan', '');
-            
-            // Log successful first participant data storage
-            $log('Participant 1 data stored for order #' . $order_id);
-            
-            // Verify data was actually saved
-            $first_name = get_post_meta($order_id, 'peserta_1_nama_depan', true);
-            $log('Verification - peserta_1_nama_depan value: ' . $first_name);
-        } else {
-            // Log failure to get order
-            $log('Failed to get order object for #' . $order_id, 'error');
-        }
-        
-        // Log the filtered POST keys to check for participant data
-        $participant_fields = array_filter(array_keys($_POST), function($key) {
-            return strpos($key, 'peserta_') === 0;
-        });
-        $log('Participant fields found in POST: ' . print_r($participant_fields, true));
-        
-        // Save data for additional participants (2 and above)
-        $saved_fields = 0;
-        foreach ($_POST as $key => $value) {
-            if (strpos($key, 'peserta_') === 0) {
-                $result = update_post_meta($order_id, $key, sanitize_text_field($value));
-                $log('Saving field ' . $key . ' for order #' . $order_id . ': ' . ($result ? 'Success' : 'Failed') . ' - Value: ' . sanitize_text_field($value));
-                $saved_fields++;
-            }
-        }
-        $order->save();
-        // Log how many participant fields were saved
-        $log('Saved ' . $saved_fields . ' participant fields for order #' . $order_id);
-        
-        // Double-check with direct database query
-        global $wpdb;
-        $meta_entries = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT meta_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key LIKE %s",
-                $order_id, 'peserta_%'
-            )
-        );
-        $log('Database verification - Found meta entries: ' . print_r($meta_entries, true));
+public function save_participant_data($order_id) {
+    // Use our custom logger if available
+    $log = function_exists('wep_log') ? 'wep_log' : 'error_log';
+
+    $log("WEP_Order_Meta::save_participant_data triggered for order #{$order_id}");
+
+    // Log the raw $_POST for debugging
+    $log("Raw POST data: " . print_r($_POST, true));
+
+    // Load the WC_Order object
+    $order = wc_get_order($order_id);
+
+    if (!$order) {
+        $log("❌ Failed to get WC_Order object for order #{$order_id}");
+        return;
     }
+
+    $log("✅ Valid order object loaded for order #{$order_id}");
+
+    // Save customer billing info as participant 1
+    $order->update_meta_data('peserta_1_nama_depan', $order->get_billing_first_name());
+    $order->update_meta_data('peserta_1_nama_belakang', $order->get_billing_last_name());
+    $order->update_meta_data('peserta_1_telepon', $order->get_billing_phone());
+    $order->update_meta_data('peserta_1_email', $order->get_billing_email());
+    $order->update_meta_data('peserta_1_kota', $order->get_billing_city());
+    $order->update_meta_data('peserta_1_pekerjaan', ''); // no default field
+
+    $log("📝 Participant 1 data saved to order meta");
+
+    // Save any additional participant fields from $_POST
+    $saved_fields = 0;
+    foreach ($_POST as $key => $value) {
+        if (strpos($key, 'peserta_') === 0) {
+            $clean_value = sanitize_text_field($value);
+            $order->update_meta_data($key, $clean_value);
+            $log("🔐 Saved meta '{$key}' with value '{$clean_value}'");
+            $saved_fields++;
+        }
+    }
+
+    // Persist all meta changes
+    $order->save();
+    $log("💾 Order #{$order_id} saved with {$saved_fields} custom participant fields");
+
+    // Final sanity check — fetch what's now stored
+    global $wpdb;
+    $meta_entries = $wpdb->get_results(
+        $wpdb->prepare(
+            "SELECT meta_id, meta_key, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key LIKE %s",
+            $order_id, 'peserta_%'
+        )
+    );
+    $log("🧪 DB Verification - Found meta entries: " . print_r($meta_entries, true));
+}
 
     public function display_participant_data_admin($order) {
         // Check if we have any participant data
